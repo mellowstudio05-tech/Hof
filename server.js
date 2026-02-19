@@ -190,9 +190,13 @@ FOODBUDDY (Foodtruck/Catering):
 - Anfrage: https://hof.mellow.studio/foodbuudy
 
 VERLINKUNG – PFLICHT (immer so umsetzen):
-- Kontaktanfrage, Buchung, Hochzeit, Taufe, Konfirmation, Geburtstag, Firmenfeier, allgemeine Anfrage, „kontaktieren“, „anfragen“, „melden“ → IMMER auf das Kontaktformular verlinken: <a href="https://hof.mellow.studio/kontakt" target="_blank">Kontakt / Anfrage</a> (oder ähnlicher Link-Text). URL immer: https://hof.mellow.studio/kontakt
-- FOODbuddy, Foodtruck, Catering außerhalb, Miete Foodtruck, „Foodtruck anfragen“ → IMMER auf die FOODbuddy-Seite verlinken: <a href="https://hof.mellow.studio/foodbuudy" target="_blank">FOODbuddy anfragen</a> (oder ähnlicher Link-Text). URL immer: https://hof.mellow.studio/foodbuudy
-- Termin buchen, Vorgespräch, Besichtigung, „wann vorbeikommen“, „Termin vereinbaren“ → Wenn eine Calendly-URL konfiguriert ist, diesen Link in der Antwort anbieten (siehe TERMINBUCHUNG unten). Sonst auf Kontaktformular https://hof.mellow.studio/kontakt verweisen.
+- Kontaktanfrage, Hochzeit, Taufe, Konfirmation, Geburtstag, Firmenfeier, allgemeine Anfrage (ohne reine Terminbuchung), „kontaktieren“, „anfragen“, „melden“ → auf das Kontaktformular verlinken: https://hof.mellow.studio/kontakt
+- FOODbuddy, Foodtruck, Catering außerhalb, Miete Foodtruck → IMMER auf https://hof.mellow.studio/foodbuudy verlinken
+- Vorgespräch, Termin buchen, Besichtigung, „wann habt ihr Zeit“, „freie Termine“, „wann vorbeikommen“ → NIEMALS das Kontaktformular empfehlen. IMMER den Calendly-Buchungslink anbieten (siehe TERMINBUCHUNG). Wenn VERFÜGBARE TERMINE unten aufgeführt sind, diese konkreten Zeiten in der Antwort nennen.
+
+VORGESPRÄCHE:
+- Vorgespräche finden immer nur donnerstags statt. Emil soll das bei Termin-Anfragen erwähnen.
+- Bei angezeigten freien Terminen immer darauf hinweisen: Die genannten Zeiten sind zum Abrufzeitpunkt frei; sie können inzwischen bereits vergeben sein. Bitte über den Buchungslink prüfen bzw. direkt buchen.
 
 GUTSHOF GIN:
 - London Dry Gin aus Marburg, regional gebrannt
@@ -215,7 +219,7 @@ ANTWORTREGELN:
 - Konkrete Infos aus den Quellen nützen; bei Kontakt- oder Buchungswünschen Adresse, Telefon, E-Mail und passende Links angeben
 - Bei Kontakt-/Buchungsanfragen (Hochzeit, Taufe, Firmenfeier, allgemeine Anfrage): immer auf https://hof.mellow.studio/kontakt verlinken (klickbar: <a href="https://hof.mellow.studio/kontakt" target="_blank">…</a>).
 - Bei FOODbuddy-/Foodtruck-/Catering-Anfragen (Miete, außerhalb des Hofs): immer auf https://hof.mellow.studio/foodbuudy verlinken (klickbar: <a href="https://hof.mellow.studio/foodbuudy" target="_blank">…</a>).
-- Bei Terminwunsch, Vorgespräch oder Besichtigung: Calendly-Link anbieten (wenn konfiguriert), sonst Kontaktformular.
+- Bei Vorgespräch / „wann Zeit“ / „freie Termine“: NIEMALS zum Kontaktformular schicken. IMMER den Calendly-Buchungslink nennen und, falls VERFÜGBARE TERMINE im Prompt stehen, diese Zeiten explizit in der Antwort aufführen. Vorgespräche nur donnerstags. Hinweis: Slots können inzwischen vergeben sein – zur Buchung den Link nutzen.
 - Keine reinen Link-Listen; immer kurze Erklärung dazu
 - Bei Kontaktanfragen immer: Brunnenstr. 16, 35041 Marburg, Tel. 0151 / 12726010, info@behring-gutshof.de sowie Link zum Kontaktformular: https://hof.mellow.studio/kontakt
 
@@ -257,12 +261,14 @@ app.post('/api/chat', async (req, res) => {
         });
 
         if (CALENDLY_URL) {
-            enhancedSystemPrompt += '\n\nTERMINBUCHUNG (Calendly): Bei Wunsch nach Termin, Vorgespräch oder Besichtigung immer diesen Link anbieten. In Antworten so einbinden: <a href="' + CALENDLY_URL + '" target="_blank">Hier können Sie einen freien Termin buchen</a>. URL: ' + CALENDLY_URL;
+            enhancedSystemPrompt += '\n\nTERMINBUCHUNG (Calendly): Bei Vorgespräch/Terminwunsch IMMER diesen Link anbieten, NIEMALS das Kontaktformular. Link in Antwort einbinden: <a href="' + CALENDLY_URL + '" target="_blank">Hier können Sie einen freien Termin buchen</a>. URL: ' + CALENDLY_URL;
         }
 
         const availableSlots = await getCalendlyAvailableTimes();
         if (availableSlots.length > 0) {
-            enhancedSystemPrompt += '\n\nVERFÜGBARE TERMINE (echte Daten von Calendly, nächste 7 Tage): ' + availableSlots.join('; ') + '. Wenn Nutzer nach freien Terminen fragen, nenne diese konkreten Zeiten in der Antwort und verweise zusätzlich auf den Buchungslink.';
+            enhancedSystemPrompt += '\n\nVERFÜGBARE TERMINE (von Calendly, nächste 7 Tage; Vorgespräche nur donnerstags): ' + availableSlots.join('; ') + '. PFLICHT bei Fragen wie "Wann habt ihr Zeit" oder "Vorgespräch": (1) Diese konkreten Zeiten in der Antwort nennen (z. B. als Aufzählung). (2) Den Calendly-Buchungslink anbieten. (3) Kurz hinweisen: Vorgespräche nur donnerstags; Slots können inzwischen vergeben sein – bitte über den Link buchen. NICHT das Kontaktformular empfehlen.';
+        } else {
+            enhancedSystemPrompt += '\n\nHinweis: Keine aktuellen Slots von Calendly geladen. Bei Vorgespräch/Termin trotzdem den Calendly-Buchungslink anbieten (siehe TERMINBUCHUNG), NICHT das Kontaktformular. Vorgespräche finden nur donnerstags statt.';
         }
 
         // OpenAI API Aufruf
