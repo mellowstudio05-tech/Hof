@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI-Suchschlitz für Unternehmensbörse</title>
+    <style>
+        /* KI-Suchschlitz Styles - Kompakt */
+        .ki-search-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .ki-search-header {
+            display: none; /* Header ausblenden für kompaktes Design */
+        }
+
+        .ki-search-input-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .ki-search-input {
+            width: 100%;
+            height: 50px;
+            padding: 12px 70px 12px 16px;
+            border: 1px solid #1a365d;
+            border-radius: 0;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        .ki-search-clear-input {
+            position: absolute;
+            right: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+            color: #999;
+            line-height: 1;
+            display: none;
+            transition: color 0.3s ease;
+        }
+
+        .ki-search-clear-input:hover {
+            color: #dc3545;
+        }
+
+        .ki-search-clear-input.visible {
+            display: block;
+        }
+
+        .ki-search-input:focus {
+            outline: none;
+            border-color: #1a365d;
+            box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.1);
+        }
+
+        .ki-search-button {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 0;
+            background: #1a365d;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .ki-search-button:hover {
+            background: #2d3748;
+        }
+
+        .ki-search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .ki-search-button svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .ki-search-suggestions {
+            display: none !important;
+        }
+
+        .ki-search-results {
+            margin-top: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .ki-search-results h3 {
+            color: #1a365d;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .ki-search-results p {
+            color: #666;
+            margin: 0;
+            line-height: 1.4;
+            font-size: 12px;
+        }
+
+        .ki-search-loading {
+            display: none;
+            text-align: center;
+            padding: 8px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .ki-search-loading.active {
+            display: block;
+        }
+
+        .ki-search-loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 50%;
+            border-top-color: #1a365d;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 6px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Styles für Such-Status */
+        .ki-search-hidden {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .ki-search-visible {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .ki-search-reset-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .ki-search-reset-button:hover {
+            background: #5a6268;
+        }
+
+        .ki-search-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .ki-search-clear-button {
+            padding: 6px 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background-color 0.3s ease;
+        }
+
+        .ki-search-clear-button:hover {
+            background: #c82333;
+        }
+
+        .ki-search-examples {
+            display: none; /* Beispiele ausblenden für kompaktes Design */
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .ki-search-container {
+                padding: 15px;
+            }
+
+            .ki-search-header h1 {
+                font-size: 24px;
+            }
+
+            .ki-search-input {
+                padding: 14px 50px 14px 16px;
+                font-size: 16px; /* Verhindert Zoom auf iOS */
+            }
+
+            .ki-search-button {
+                width: 40px;
+                height: 40px;
+                right: 6px;
+            }
+
+            .ki-search-button svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        /* Integration mit Finsweet CMS Filter */
+        .finsweet-integration {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            border: 1px solid #1a365d;
+        }
+
+        .finsweet-integration h3 {
+            color: #1a365d;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .finsweet-integration p {
+            color: #666;
+            margin: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ki-search-container">
+        <!-- Header entfernt für kompaktes Design -->
+
+        <div class="ki-search-input-container">
+            <input 
+                type="text" 
+                class="ki-search-input" 
+                id="kiSearchInput" 
+                placeholder="z.B. Ich suche ein Unternehmen mit 30 Jahren Erfahrung im Maschinenbau..."
+                autocomplete="off"
+            >
+            <button class="ki-search-clear-input" id="kiSearchClearInput" aria-label="Eingabe löschen">×</button>
+            <button class="ki-search-button" id="kiSearchButton" aria-label="Suchen">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+            </button>
+            
+            <div class="ki-search-suggestions" id="kiSearchSuggestions">
+                <!-- Suggestions werden dynamisch eingefügt -->
+            </div>
+        </div>
+
+        <div class="ki-search-loading" id="kiSearchLoading">
+            Wir suchen das passende Unternehmen...
+        </div>
+
+        <div class="ki-search-results" id="kiSearchResults" style="display: none;">
+            <!-- Reset-Button wird nur bei Bedarf angezeigt -->
+        </div>
+
+        <!-- Beispiele und Integration-Info entfernt für kompaktes Design -->
+    </div>
+
+    <!-- Finsweet CMS Filter Script (falls noch nicht vorhanden) -->
+    <script src="https://cdn.jsdelivr.net/gh/finsweet/Attributes@latest/cmsfilter.js"></script>
+
+    <script>
+        // Konfiguration
+        const API_URL = 'https://chatgpt-webflow-widget.vercel.app/api/ki-search';
+        
+        // DOM Elemente
+        const searchInput = document.getElementById('kiSearchInput');
+        const searchButton = document.getElementById('kiSearchButton');
+        const searchClearInput = document.getElementById('kiSearchClearInput');
+        const searchSuggestions = document.getElementById('kiSearchSuggestions');
+        const searchResults = document.getElementById('kiSearchResults');
+        const searchLoading = document.getElementById('kiSearchLoading');
+        
+        // Automatische KI-Suche bei Eingabe
+        let searchTimeout;
+
+
+        // KI-Suche durchführen
+        async function performSearch(query) {
+            if (!query.trim()) return;
+
+            // UI-Status aktualisieren
+            searchButton.disabled = true;
+            searchLoading.classList.add('active');
+            searchResults.style.display = 'none';
+            searchSuggestions.style.display = 'none';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        query: query,
+                        type: 'company_search'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Netzwerkfehler');
+                }
+
+                const data = await response.json();
+                console.log('📥 AI Response:', data);
+
+                // Finsweet Filter automatisch anwenden
+                if (data.finsweetFilters && data.finsweetFilters.length > 0) {
+                    console.log('🔍 Anwenden von Finsweet Filtern:', data.finsweetFilters);
+                    applyFinsweetFilters(data.finsweetFilters);
+                    
+                    // Nach dem Finsweet Filter auch Textsuche durchführen für zusätzliche Filterung
+                    setTimeout(() => {
+                        console.log('🔍 Zusätzliche Textsuche durchführen...');
+                        performPageSearch(query);
+                        showResetButton(); // Zeige Reset-Button nach erfolgreicher Suche
+                    }, 1000);
+                } else {
+                    console.log('⚠️ Keine Finsweet Filter vorhanden, führe nur Textsuche durch');
+                    // Falls keine Finsweet Filter, nur Textsuche durchführen
+                    performPageSearch(query);
+                    showResetButton(); // Zeige Reset-Button nach erfolgreicher Suche
+                }
+
+            } catch (error) {
+                console.error('❌ Fehler:', error);
+                displayError('Entschuldigung, es gab einen Fehler bei der Suche. Bitte versuchen Sie es erneut.');
+            } finally {
+                searchButton.disabled = false;
+                searchLoading.classList.remove('active');
+            }
+        }
+
+        // Zeige Reset-Button an
+        function showResetButton() {
+            const resetButton = document.getElementById('kiSearchReset');
+            if (resetButton) {
+                resetButton.style.display = 'block';
+            } else {
+                // Erstelle Reset-Button falls nicht vorhanden
+                searchResults.innerHTML = `
+                    <button class="ki-search-reset-button" id="kiSearchReset">Alle Unternehmen anzeigen</button>
+                `;
+                
+                const newResetButton = document.getElementById('kiSearchReset');
+                if (newResetButton) {
+                    newResetButton.addEventListener('click', () => {
+                        resetSearch();
+                        searchInput.value = '';
+                        newResetButton.style.display = 'none';
+                    });
+                }
+            }
+        }
+
+        // Verstecke Reset-Button
+        function hideResetButton() {
+            const resetButton = document.getElementById('kiSearchReset');
+            if (resetButton) {
+                resetButton.style.display = 'none';
+            }
+        }
+
+        // Fehler anzeigen
+        function displayError(message) {
+            searchResults.innerHTML = `
+                <h3>❌ Fehler</h3>
+                <p>${message}</p>
+            `;
+            searchResults.style.display = 'block';
+        }
+
+        // Finsweet Filter anwenden
+        function applyFinsweetFilters(filters) {
+            console.log('Anwenden der Finsweet Filter:', filters);
+            
+            // Wenn keine Filter, breche ab
+            if (!filters || filters.length === 0) {
+                console.log('Keine Finsweet Filter zu anwenden');
+                return;
+            }
+            
+            // Warte kurz, damit Finsweet geladen ist
+            setTimeout(() => {
+                let filtersApplied = false;
+                
+                filters.forEach(filter => {
+                    try {
+                        console.log(`Versuche Filter anzuwenden: field="${filter.field}", value="${filter.value}"`);
+                        
+                        // Suche nach Filter-Elementen mit dem spezifischen fs-cmsfilter-field
+                        const filterFieldElements = document.querySelectorAll(`[fs-cmsfilter-field="${filter.field}"]`);
+                        
+                        console.log(`Gefundene Filter-Elemente für "${filter.field}": ${filterFieldElements.length}`);
+                        
+                        if (filterFieldElements.length === 0) {
+                            console.warn(`Kein Filter-Element gefunden für: ${filter.field}`);
+                            return;
+                        }
+                        
+                        filterFieldElements.forEach(element => {
+                            console.log(`Verarbeite Element:`, element.tagName, element.type);
+                            
+                            if (element.type === 'checkbox') {
+                                // Checkbox-Filter aktivieren
+                                element.checked = true;
+                                element.dispatchEvent(new Event('change', { bubbles: true }));
+                                filtersApplied = true;
+                                console.log(`✓ Checkbox aktiviert: ${filter.field} = ${filter.value}`);
+                                
+                            } else if (element.tagName === 'SELECT') {
+                                // Select-Filter setzen
+                                element.value = filter.value;
+                                element.dispatchEvent(new Event('change', { bubbles: true }));
+                                filtersApplied = true;
+                                console.log(`✓ Select gesetzt: ${filter.field} = ${filter.value}`);
+                                
+                            } else if (element.type === 'range') {
+                                // Range-Filter setzen
+                                element.value = filter.value;
+                                element.dispatchEvent(new Event('input', { bubbles: true }));
+                                filtersApplied = true;
+                                console.log(`✓ Range gesetzt: ${filter.field} = ${filter.value}`);
+                                
+                            } else if (element.type === 'text') {
+                                // Text-Input-Filter setzen
+                                element.value = filter.value;
+                                element.dispatchEvent(new Event('input', { bubbles: true }));
+                                filtersApplied = true;
+                                console.log(`✓ Text gesetzt: ${filter.field} = ${filter.value}`);
+                                
+                            } else if (element.tagName === 'LABEL') {
+                                // Label-basierte Filter (häufig bei Finsweet)
+                                const checkbox = element.querySelector('input[type="checkbox"]');
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                    filtersApplied = true;
+                                    console.log(`✓ Label-Checkbox aktiviert: ${filter.field} = ${filter.value}`);
+                                }
+                            } else {
+                                console.log(`Unerwarteter Elementtyp: ${element.tagName} / ${element.type}`);
+                            }
+                        });
+                        
+                    } catch (error) {
+                        console.warn(`Fehler beim Anwenden des Filters ${filter.field}:`, error);
+                    }
+                });
+                
+                if (!filtersApplied) {
+                    console.warn('Keine Filter konnten angewendet werden!');
+                }
+                
+                // Trigger Finsweet Filter-Update
+                setTimeout(() => {
+                    if (window.FsAttributes && window.FsAttributes.cmsfilter) {
+                        window.FsAttributes.cmsfilter.refresh();
+                        console.log('✓ Finsweet Filter aktualisiert');
+                    }
+                    
+                    // Scroll zu den Ergebnissen
+                    const resultsElement = document.querySelector('[fs-cmsfilter-element="list"]');
+                    if (resultsElement) {
+                        resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 200);
+                
+            }, 500);
+        }
+
+        // Zusätzliche Textsuche auf der gesamten Seite
+        function performPageSearch(searchQuery) {
+            console.log('Führe Textsuche auf der Seite durch:', searchQuery);
+            
+            // Warte kurz, damit Finsweet Filter aktiv sind
+            setTimeout(() => {
+                // Suche nach einzelnen Unternehmenskarten in der Finsweet Collection List
+                const listContainer = document.querySelector('[fs-cmsfilter-element="list"]');
+                
+                if (!listContainer) {
+                    console.log('❌ Keine Finsweet Collection List gefunden');
+                    return;
+                }
+                
+                console.log('✓ Finsweet Collection List gefunden:', listContainer);
+                
+                // Finde alle einzelnen Karten innerhalb der Collection List
+                // Versuche verschiedene Selektoren für Webflow-Strukturen
+                let companyElements = listContainer.querySelectorAll(':scope > *');
+                
+                // Falls keine direkten Kinder, versuche andere Selektoren
+                if (companyElements.length === 0 || companyElements.length === 1) {
+                    // Suche nach Grid-Item-Strukturen
+                    companyElements = listContainer.querySelectorAll('[class*="grid"], [class*="collection"], [class*="company"], [class*="w-dyn-item"]');
+                    
+                    // Falls immer noch nichts gefunden, verwende alle direkten und indirekten Kinder
+                    if (companyElements.length === 0) {
+                        // Finde parent mit grid-layout oder flex-layout
+                        const gridParent = listContainer.querySelector('.w-layout-grid, [class*="grid"], [class*="layout-grid"]');
+                        if (gridParent) {
+                            companyElements = gridParent.children;
+                        } else {
+                            // Letzter Fallback: Alle direkten Kinder
+                            companyElements = Array.from(listContainer.children);
+                        }
+                    }
+                }
+                
+                console.log(`📦 Gefundene Karten: ${companyElements.length}`);
+                
+                if (companyElements.length === 0) {
+                    console.log('❌ Keine Unternehmenskarten gefunden');
+                    // Versuche alternativen Ansatz
+                    const allDivs = listContainer.querySelectorAll('div[class*="w-"]');
+                    console.log(`Versuche alternative Suche... ${allDivs.length} potenzielle Karten gefunden`);
+                    
+                    if (allDivs.length > 0) {
+                        companyElements = Array.from(allDivs).filter(div => 
+                            div.querySelector('img') || 
+                            div.textContent.trim().length > 10
+                        );
+                        console.log(`Filterte auf ${companyElements.length} Karten mit Inhalt`);
+                    }
+                }
+                
+                if (!companyElements || companyElements.length === 0) {
+                    console.log('❌ Keine Unternehmenskarten gefunden nach allen Versuchen');
+                    return;
+                }
+                
+                // Normalisiere Suchbegriffe
+                const query = searchQuery.toLowerCase();
+                const keywords = query.split(' ').filter(word => word.length > 2);
+                const matchingCompanies = [];
+                
+                Array.from(companyElements).forEach((card, index) => {
+                    // Hole Text aus der gesamten Karte
+                    const cardText = card.textContent.toLowerCase();
+                    
+                    // Suche speziell nach dem Unternehmensnamen (meist am Anfang der Karte)
+                    const companyName = card.querySelector('[fs-cmsfilter-field="Name"], h1, h2, h3, .company-name, .title')?.textContent?.toLowerCase() || '';
+                    
+                    // Liste spezieller Begriffe für erweiterte Suche
+                    const specialTerms = {
+                        'marktführer': 0.8,
+                        'kmu': 0.7,
+                        'familienunternehmen': 0.7,
+                        'startup': 0.6,
+                        'etabliert': 0.5,
+                        'innovativ': 0.5,
+                        'gesucht': 0.9,
+                        'verkauf': 0.9,
+                        'nachfolge': 0.8,
+                        'übernahme': 0.8,
+                        'b2b': 0.8,
+                        'b2c': 0.6,
+                        'wholesale': 0.6,
+                        'retail': 0.6
+                    };
+                    
+                    // Prüfe ob der Text relevante Schlüsselwörter enthält
+                    let matchScore = 0;
+                    let nameMatchScore = 0;
+                    let specialTermScore = 0;
+                    
+                    keywords.forEach(keyword => {
+                        // Suche im gesamten Kartentext
+                        if (cardText.includes(keyword)) {
+                            matchScore++;
+                            
+                            // Bonus für spezielle Begriffe
+                            const lowerKeyword = keyword.toLowerCase();
+                            if (specialTerms[lowerKeyword]) {
+                                specialTermScore += specialTerms[lowerKeyword];
+                            }
+                        }
+                        
+                        // Zusätzliche Gewichtung für Treffer im Namen
+                        if (companyName.includes(keyword)) {
+                            nameMatchScore++;
+                            matchScore += 0.5; // Bonus für Namens-Treffer
+                        }
+                    });
+                    
+                    // Bonus für Status- oder Geschäftsbegriffe
+                    matchScore += specialTermScore;
+                    
+                    // Wenn mindestens 50% der Keywords gefunden wurden ODER Name matcht
+                    if (matchScore >= keywords.length * 0.5 || nameMatchScore > 0) {
+                        matchingCompanies.push(card);
+                        console.log(`✓ Karte ${index + 1} matcht (Score: ${matchScore}, Name-Score: ${nameMatchScore}):`, 
+                            companyName ? `Name: "${companyName.substring(0, 30)}..."` : 'Kein Name gefunden',
+                            `Text: "${cardText.substring(0, 50)}..."`);
+                    } else {
+                        console.log(`✗ Karte ${index + 1} matcht nicht (Score: ${matchScore}):`, 
+                            companyName ? `Name: "${companyName.substring(0, 30)}..."` : 'Kein Name gefunden',
+                            `Text: "${cardText.substring(0, 50)}..."`);
+                    }
+                });
+                
+                console.log(`📊 Passende Karten: ${matchingCompanies.length} von ${companyElements.length}`);
+                
+                // Verstecke nicht passende Unternehmen
+                hideNonMatchingElements(companyElements, matchingCompanies);
+                
+            }, 500);
+        }
+
+        // Verstecke nicht passende Elemente und zeige nur passende an
+        function hideNonMatchingElements(allElements, matchingElements) {
+            console.log(`Verstecke nicht passende Elemente. Gefunden: ${matchingElements.length} von ${allElements.length}`);
+            
+            // Entferne vorherige Such-Status
+            Array.from(document.querySelectorAll('.ki-search-hidden, .ki-search-visible')).forEach(el => {
+                el.classList.remove('ki-search-hidden', 'ki-search-visible');
+                if (el.style) {
+                    el.style.display = '';
+                    el.style.opacity = '';
+                }
+            });
+            
+            // Konvertiere NodeList zu Array für bessere Kompatibilität
+            const allElementsArray = Array.from(allElements);
+            const matchingElementsArray = Array.from(matchingElements);
+            
+            // Verstecke alle Elemente zuerst
+            allElementsArray.forEach((element, index) => {
+                if (!matchingElementsArray.includes(element)) {
+                    element.classList.add('ki-search-hidden');
+                    if (element.style) {
+                        element.style.display = 'none';
+                        element.style.visibility = 'hidden';
+                    }
+                }
+            });
+            
+            // Zeige nur passende Elemente an
+            matchingElementsArray.forEach((element, index) => {
+                element.classList.remove('ki-search-hidden');
+                element.classList.add('ki-search-visible');
+                if (element.style) {
+                    element.style.display = '';
+                    element.style.visibility = 'visible';
+                }
+            });
+            
+            // Update Finsweet Counter falls vorhanden
+            if (window.FsAttributes && window.FsAttributes.cmsfilter) {
+                // Trigger update für Finsweet
+                const event = new Event('fs-cmsfilter-update');
+                document.dispatchEvent(event);
+                
+                // Update Counter manuell
+                setTimeout(() => {
+                    const countElements = document.querySelectorAll('[fs-cmsfilter-element="items-count"], [fs-cmsfilter-element="results-count"]');
+                    countElements.forEach(counter => {
+                        const visibleCount = matchingElementsArray.length;
+                        counter.textContent = `${visibleCount} Ergebnisse`;
+                    });
+                }, 100);
+            }
+            
+            // Scroll zum ersten gefundenen Element
+            if (matchingElementsArray.length > 0) {
+                matchingElementsArray[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            console.log(`✓ ${matchingElementsArray.length} passende Unternehmen werden angezeigt`);
+        }
+
+        // Funktion zum Zurücksetzen der Suche
+        function resetSearch() {
+            // Zeige alle Elemente wieder an
+            document.querySelectorAll('.ki-search-hidden, .ki-search-visible').forEach(el => {
+                el.classList.remove('ki-search-hidden', 'ki-search-visible');
+                if (el.style) {
+                    el.style.display = '';
+                    el.style.visibility = '';
+                    el.style.opacity = '';
+                }
+            });
+            
+            // Update Finsweet Counter falls vorhanden
+            if (window.FsAttributes && window.FsAttributes.cmsfilter) {
+                // Trigger Finsweet Refresh
+                setTimeout(() => {
+                    if (window.FsAttributes && window.FsAttributes.cmsfilter) {
+                        window.FsAttributes.cmsfilter.refresh();
+                    }
+                    
+                    // Update Counter
+                    const countElements = document.querySelectorAll('[fs-cmsfilter-element="items-count"], [fs-cmsfilter-element="results-count"]');
+                    const listContainer = document.querySelector('[fs-cmsfilter-element="list"]');
+                    if (listContainer && countElements.length > 0) {
+                        const allCards = listContainer.querySelectorAll(':scope > *, [class*="grid"], [class*="collection"]');
+                        countElements.forEach(counter => {
+                            counter.textContent = `${allCards.length} Ergebnisse`;
+                        });
+                    }
+                }, 100);
+            }
+            
+            console.log('✓ Suche zurückgesetzt - alle Unternehmen werden wieder angezeigt');
+            
+            // Verstecke Reset-Button
+            hideResetButton();
+        }
+
+        // Clear-Button anzeigen/verstecken basierend auf Eingabe
+        function updateClearButton() {
+            if (searchInput.value.trim()) {
+                searchClearInput.classList.add('visible');
+            } else {
+                searchClearInput.classList.remove('visible');
+            }
+        }
+
+        // Clear-Button Event Listener
+        searchClearInput.addEventListener('click', () => {
+            searchInput.value = '';
+            searchSuggestions.style.display = 'none';
+            searchClearInput.classList.remove('visible');
+            searchInput.focus();
+            resetSearch();
+        });
+
+        // Event Listeners
+        searchInput.addEventListener('input', (e) => {
+            updateClearButton();
+            
+            // KI-Suche mit Debouncing bei jeder Eingabe
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (e.target.value.trim() && e.target.value.length >= 3) {
+                    performSearch(e.target.value);
+                } else if (!e.target.value.trim()) {
+                    resetSearch();
+                }
+            }, 500); // 500ms Verzögerung für KI-Suche
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                if (searchInput.value.trim()) {
+                    performSearch(searchInput.value);
+                }
+            }
+        });
+
+        searchButton.addEventListener('click', () => {
+            clearTimeout(searchTimeout);
+            if (searchInput.value.trim()) {
+                performSearch(searchInput.value);
+            }
+        });
+
+        // Klick außerhalb schließt nichts mehr (da keine Suggestions)
+        // Fokus auf Input beim Laden
+        searchInput.focus();
+    </script>
+</body>
+</html>

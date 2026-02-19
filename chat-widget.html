@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emil – Gutshof KI</title>
+    <style>
+        /* Chat Widget Styles */
+        .chat-widget-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+
+        .chat-toggle-button {
+            width: auto;
+            min-width: 60px;
+            height: 60px;
+            border-radius: 0;
+            background: linear-gradient(135deg, #5e8c5f 0%, #4a6b4b 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(94, 140, 95, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 0 20px;
+            gap: 10px;
+        }
+
+        .chat-toggle-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(94, 140, 95, 0.5);
+        }
+
+        .chat-toggle-button svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+            flex-shrink: 0;
+        }
+
+        .chat-toggle-text {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .chat-window {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 45vw;
+            max-width: 400px;
+            min-width: 300px;
+            height: 100vh;
+            background: white;
+            border-radius: 0;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideInRight 0.3s ease;
+            z-index: 10000;
+        }
+
+        .chat-window.open {
+            display: flex;
+        }
+
+        /* Desktop-Modus */
+        @media (min-width: 769px) {
+            .chat-window {
+                width: 45vw;
+                max-width: 400px;
+                min-width: 300px;
+            }
+            
+            .chat-window.expanded {
+                width: 50vw;
+                max-width: 600px;
+                min-width: 400px;
+            }
+            
+            .chat-input-container {
+                padding: 16px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            .chat-input-wrapper {
+                width: 100% !important;
+                max-width: 100% !important;
+                gap: 12px !important;
+            }
+            
+            .chat-input {
+                flex: 1 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 24px 16px !important;
+                min-height: 48px !important;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #5e8c5f 0%, #4a6b4b 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-chat-button {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .clear-chat-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .expand-chat-button {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .expand-chat-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Vergrößern-Button auf mobilen Geräten ausblenden */
+        @media (max-width: 768px) {
+            .expand-chat-button {
+                display: none !important;
+            }
+        }
+
+        .chat-window.expanded {
+            width: 50vw;
+            max-width: 600px;
+            min-width: 400px;
+            height: 100vh;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f7f7f7;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.assistant {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user .message-bubble {
+            background: #5e8c5f;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Rich Text Formatting */
+        .message-bubble h3 {
+            color: #5e8c5f;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 12px 0 8px 0;
+            line-height: 1.3;
+            border-left: 3px solid #5e8c5f;
+            padding-left: 12px;
+        }
+
+        .message-bubble ul {
+            margin: 16px 0;
+            padding-left: 0;
+            list-style-type: none;
+        }
+
+        .message-bubble ul li {
+            margin: 12px 0;
+            padding-left: 24px;
+            position: relative;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message-bubble ul li::before {
+            content: "●";
+            color: #5e8c5f;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Fallback für ältere Browser */
+        .message-bubble ul li:before {
+            content: "●";
+            color: #5e8c5f;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .message-bubble ol {
+            margin: 16px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .message-bubble ol li {
+            margin: 12px 0;
+            padding-left: 24px;
+            position: relative;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message-bubble ol li::before {
+            content: "●";
+            color: #5e8c5f;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Fallback für ältere Browser */
+        .message-bubble ol li:before {
+            content: "●";
+            color: #5e8c5f;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .message-bubble strong {
+            font-weight: 600;
+            color: #5e8c5f;
+            background: rgba(94, 140, 95, 0.15);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .message-bubble p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .message-bubble p:first-child {
+            margin-top: 0;
+        }
+
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Link Styling */
+        .message-bubble a {
+            color: #5e8c5f;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .message-bubble a:hover {
+            color: #4a6b4b;
+            text-decoration: none;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 16px;
+            width: fit-content;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #999;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+
+        .chat-input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 24px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            max-height: 100px;
+            transition: border-color 0.3s ease;
+            min-height: 48px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #5e8c5f;
+        }
+
+        .send-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            background: #5e8c5f;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #4a6b4b;
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .send-button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        /* Scrollbar Styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .chat-widget-container {
+                bottom: 15px;
+                right: 15px;
+            }
+
+            .chat-toggle-button {
+                min-width: auto;
+                width: auto;
+                height: 56px;
+                padding: 0 18px;
+                gap: 10px;
+            }
+
+            .chat-toggle-text {
+                font-size: 14px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .chat-toggle-button svg {
+                width: 26px;
+                height: 26px;
+                flex-shrink: 0;
+            }
+
+            .chat-window {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                height: 85vh !important;
+                max-height: 85vh !important;
+                top: 0 !important;
+                right: 0 !important;
+                left: 0 !important;
+                bottom: auto !important;
+                transform: translateY(-100%) !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                animation: slideInDown 0.3s ease !important;
+                position: fixed !important;
+                z-index: 10000 !important;
+                -webkit-overflow-scrolling: touch !important;
+                display: none !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+
+            .chat-window.open {
+                display: flex !important;
+                transform: translateY(0) !important;
+            }
+
+            .chat-header {
+                padding: 16px;
+                min-height: 56px;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 1000 !important;
+                background: linear-gradient(135deg, #5e8c5f 0%, #4a6b4b 100%) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                -webkit-tap-highlight-color: transparent !important;
+                cursor: grab;
+                user-select: none;
+            }
+
+            .chat-header:active {
+                cursor: grabbing;
+            }
+
+            .chat-header::before {
+                content: '';
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 2px;
+            }
+
+            .chat-header h3 {
+                font-size: 18px;
+                margin: 0;
+                font-weight: 600;
+            }
+
+            .clear-chat-button {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 44px;
+                min-width: 44px;
+                -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+                touch-action: manipulation;
+            }
+
+            .close-button {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+                min-width: 44px;
+                min-height: 44px;
+                -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+                touch-action: manipulation;
+            }
+
+            .chat-messages {
+                padding: 16px 12px !important;
+                flex: 1 1 auto !important;
+                overflow-y: auto !important;
+                min-height: 0 !important;
+                position: relative !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
+                box-sizing: border-box !important;
+            }
+
+            .message-bubble {
+                font-size: 15px;
+                padding: 12px 16px;
+                max-width: 85%;
+                line-height: 1.5;
+                -webkit-tap-highlight-color: transparent;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px !important;
+                padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+                border-top: 1px solid #e0e0e0 !important;
+                position: relative !important;
+                bottom: auto !important;
+                background: white !important;
+                z-index: 1000 !important;
+                -webkit-tap-highlight-color: transparent !important;
+                display: flex !important;
+                flex-shrink: 0 !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                margin-top: auto !important;
+                transition: bottom 0.3s ease-out !important;
+                order: 999 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                height: auto !important;
+                min-height: 60px !important;
+            }
+
+            .chat-input-wrapper {
+                display: flex !important;
+                gap: 12px !important;
+                align-items: flex-end !important;
+                width: 100% !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+            .chat-input {
+                font-size: 16px !important; /* Verhindert Zoom auf iOS */
+                padding: 14px 16px !important;
+                border-radius: 24px !important;
+                min-height: 48px !important;
+                max-height: 120px !important;
+                resize: none !important;
+                -webkit-appearance: none !important;
+                appearance: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+                flex: 1 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+            }
+
+            .send-button {
+                width: 48px !important;
+                height: 48px !important;
+                min-width: 48px !important;
+                min-height: 48px !important;
+                border-radius: 50% !important;
+                -webkit-tap-highlight-color: rgba(94, 140, 95, 0.15);
+                touch-action: manipulation;
+                flex-shrink: 0;
+            }
+
+            .send-button svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .message-time {
+                font-size: 9px;
+            }
+
+            /* Touch-friendly hover states */
+            .chat-toggle-button:active {
+                transform: scale(0.95);
+            }
+
+            .clear-chat-button:active {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .send-button:active {
+                transform: scale(0.95);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-widget-container {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .chat-toggle-button {
+                min-width: auto;
+                width: auto;
+                height: 50px;
+                padding: 0 16px;
+                gap: 8px;
+            }
+
+            .chat-toggle-text {
+                font-size: 13px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .chat-toggle-button svg {
+                width: 22px;
+                height: 22px;
+                flex-shrink: 0;
+            }
+
+            .chat-window {
+                width: 100vw;
+                height: 85vh;
+                max-height: 85vh;
+                top: 0;
+                right: 0;
+                left: 0;
+                bottom: auto;
+                border-radius: 0;
+            }
+
+            .chat-header {
+                padding: 16px;
+                min-height: 56px;
+            }
+
+            .chat-header h3 {
+                font-size: 18px;
+            }
+
+            .clear-chat-button {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .close-button {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .chat-messages {
+                padding: 16px 12px;
+                height: calc(100vh - 140px) !important;
+                max-height: calc(100vh - 140px) !important;
+            }
+
+            .message-bubble {
+                font-size: 14px;
+                padding: 10px 14px;
+                max-width: 85%;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px;
+            }
+
+            .chat-input {
+                padding: 14px 16px;
+                font-size: 16px !important;
+                min-height: 48px;
+            }
+
+            .send-button {
+                width: 48px !important;
+                height: 48px !important;
+                min-width: 48px !important;
+                min-height: 48px !important;
+            }
+
+            .send-button svg {
+                width: 20px;
+                height: 20px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 360px) {
+            .chat-widget-container {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .chat-toggle-button {
+                min-width: 50px;
+                width: 50px;
+                padding: 0;
+                gap: 0;
+            }
+
+            .chat-toggle-text {
+                display: none;
+            }
+
+            .chat-toggle-button svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .chat-window {
+                width: 100vw;
+                height: 85vh;
+                max-height: 85vh;
+                top: 0;
+                right: 0;
+                left: 0;
+                bottom: auto;
+                border-radius: 0;
+            }
+
+            .chat-header h3 {
+                font-size: 13px;
+            }
+
+            .message-bubble {
+                font-size: 12px;
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-widget-container">
+        <!-- Chat Toggle Button -->
+        <button class="chat-toggle-button" id="chatToggle" aria-label="Chat öffnen">
+            <div class="chat-toggle-text" id="chatToggleText">Frag Emil</div>
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+        </button>
+
+        <!-- Chat Window -->
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div>
+                    <h3>Emil – Gutshof KI</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="clear-chat-button" id="clearChat" aria-label="Chat leeren">Chat leeren</button>
+                    <button class="expand-chat-button" id="expandChat" aria-label="Fenster vergrößern">Vergrößern</button>
+                    <button class="close-button" id="closeChat" aria-label="Chat schließen">&times;</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        <p>Herzlich willkommen beim Alten Behring Gutshof!</p>
+                        <p>Ich bin Emil, Ihr freundlicher KI-Assistent. Ich beantworte gern Ihre Fragen zum Gutshof, zu Veranstaltungen und zu unseren Angeboten:</p>
+                        <ul>
+                            <li>Veranstaltungen (Hochzeit, Firmenfeier, Tagung, Weihnachtsfeier …)</li>
+                            <li>Gelände &amp; Räume (Kapazität, Barrierefreiheit)</li>
+                            <li>FOODbuddy – Catering &amp; Foodtruck</li>
+                            <li>Gutshof Gin &amp; Shop</li>
+                            <li>Kontakt &amp; Anfragen</li>
+                        </ul>
+                        <p>Wobei kann ich Ihnen helfen?</p>
+                    </div>
+                    <span class="message-time" id="welcomeTime"></span>
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ihre Nachricht eingeben..."
+                        rows="1"
+                    ></textarea>
+                    <button class="send-button" id="sendButton" aria-label="Nachricht senden">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguration - Backend-URL für TL Consult
+        // Backend der Gutshof-KI: gleicher Host = /api/chat; bei Einbettung auf anderer Seite volle URL setzen (z. B. window.GUTSHOF_CHAT_API_URL).
+        const API_URL = (typeof window.GUTSHOF_CHAT_API_URL !== 'undefined' ? window.GUTSHOF_CHAT_API_URL : '') || '/api/chat';
+
+        // DOM Elemente
+        const chatToggle = document.getElementById('chatToggle');
+        const chatWindow = document.getElementById('chatWindow');
+        const closeChat = document.getElementById('closeChat');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const chatToggleText = document.getElementById('chatToggleText');
+        const expandChat = document.getElementById('expandChat');
+
+        // Chat öffnen/schließen
+        chatToggle.addEventListener('click', () => {
+            chatWindow.classList.add('open');
+            // Initiale Viewport-Höhe aktualisieren
+            if (window.innerWidth <= 768) {
+                // Verwende Visual Viewport API falls verfügbar
+                if (window.visualViewport) {
+                    initialViewportHeight = window.visualViewport.height;
+                } else {
+                    initialViewportHeight = window.innerHeight;
+                }
+                document.body.style.overflow = 'hidden';
+                // Pull-to-Refresh verhindern
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+                if (chatInputContainer) {
+                    chatInputContainer.style.display = 'flex';
+                    chatInputContainer.style.visibility = 'visible';
+                    chatInputContainer.style.opacity = '1';
+                    chatInputContainer.style.position = 'relative';
+                    chatInputContainer.style.bottom = 'auto';
+                    chatInputContainer.style.width = '100%';
+                    chatInputContainer.style.zIndex = '1000';
+                }
+                setTimeout(() => {
+                    if (chatInputContainer) {
+                        chatInputContainer.style.display = 'flex';
+                        chatInputContainer.style.visibility = 'visible';
+                        chatInputContainer.style.opacity = '1';
+                    }
+                }, 50);
+            } else {
+                chatInput.focus();
+            }
+            localStorage.setItem('tl_consult_chat_status', 'open');
+        });
+
+        closeChat.addEventListener('click', () => {
+            chatWindow.classList.remove('open');
+            if (window.innerWidth <= 768) {
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.width = '';
+            }
+            localStorage.setItem('tl_consult_chat_status', 'closed');
+        });
+
+        // Tastatur-Positionierung (mobil)
+        const chatInputContainer = document.querySelector('.chat-input-container');
+        let initialViewportHeight = window.innerHeight || window.visualViewport?.height || window.innerHeight;
+        let isKeyboardOpen = false;
+        if (window.innerWidth <= 768) {
+            function adjustInputPosition() {
+                let currentViewportHeight, viewportOffsetTop = 0;
+                if (window.visualViewport) {
+                    currentViewportHeight = window.visualViewport.height;
+                    viewportOffsetTop = window.visualViewport.offsetTop;
+                } else {
+                    currentViewportHeight = window.innerHeight;
+                }
+                const heightDiff = initialViewportHeight - currentViewportHeight;
+                if (heightDiff > 100) {
+                    isKeyboardOpen = true;
+                    chatInputContainer.style.position = 'fixed';
+                    chatInputContainer.style.bottom = `${viewportOffsetTop}px`;
+                    chatInputContainer.style.left = '0';
+                    chatInputContainer.style.right = '0';
+                    chatInputContainer.style.width = '100%';
+                    chatInputContainer.style.zIndex = '10001';
+                    chatInputContainer.style.transition = 'bottom 0.3s ease-out';
+                    setTimeout(() => chatMessages.scrollTop = chatMessages.scrollHeight, 100);
+                } else {
+                    if (isKeyboardOpen) chatInputContainer.style.transition = 'bottom 0.3s ease-out';
+                    isKeyboardOpen = false;
+                    chatInputContainer.style.position = 'relative';
+                    chatInputContainer.style.bottom = 'auto';
+                    chatInputContainer.style.left = '';
+                    chatInputContainer.style.right = '';
+                    chatInputContainer.style.width = '';
+                    chatInputContainer.style.zIndex = '';
+                }
+            }
+            function updateInitialHeight() {
+                initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            }
+            window.addEventListener('resize', () => { updateInitialHeight(); adjustInputPosition(); });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', adjustInputPosition);
+                window.visualViewport.addEventListener('scroll', adjustInputPosition);
+            }
+            chatInput.addEventListener('focus', () => {
+                updateInitialHeight();
+                setTimeout(() => adjustInputPosition(), 100);
+                setTimeout(() => adjustInputPosition(), 400);
+            });
+            chatInput.addEventListener('blur', () => {
+                setTimeout(() => { updateInitialHeight(); adjustInputPosition(); }, 300);
+            });
+        }
+
+        // Swipe zum Schließen (mobil)
+        if (window.innerWidth <= 768) {
+            const chatHeader = document.querySelector('.chat-header');
+            let touchStartY = 0, touchEndY = 0, isSwiping = false;
+            chatHeader.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                isSwiping = false;
+            }, { passive: true });
+            chatHeader.addEventListener('touchmove', (e) => {
+                touchEndY = e.touches[0].clientY;
+                const diff = touchEndY - touchStartY;
+                if (diff > 50 && touchStartY < 100) {
+                    isSwiping = true;
+                    chatWindow.style.transform = `translateY(${Math.min(diff * 0.5, 100)}px)`;
+                }
+            }, { passive: true });
+            chatHeader.addEventListener('touchend', () => {
+                const diff = touchEndY - touchStartY;
+                if (isSwiping && diff > 80) {
+                    chatWindow.classList.remove('open');
+                    if (window.innerWidth <= 768) {
+                        document.body.style.overflow = '';
+                        document.body.style.position = '';
+                        document.body.style.width = '';
+                    }
+                    localStorage.setItem('tl_consult_chat_status', 'closed');
+                } else {
+                    chatWindow.style.transform = '';
+                }
+                touchStartY = touchEndY = isSwiping = 0;
+            }, { passive: true });
+        }
+
+        // Chat vergrößern/zusammenklappen
+        expandChat.addEventListener('click', () => {
+            chatWindow.classList.toggle('expanded');
+            const isExpanded = chatWindow.classList.contains('expanded');
+            expandChat.textContent = isExpanded ? 'Zusammenklappen' : 'Vergrößern';
+        });
+
+        // Chat leeren
+        const clearChat = document.getElementById('clearChat');
+        clearChat.addEventListener('click', () => {
+            if (confirm('Möchten Sie wirklich den gesamten Chat-Verlauf löschen?')) {
+                clearChatHistory();
+            }
+        });
+
+        // Willkommenszeit setzen
+        document.getElementById('welcomeTime').textContent = getCurrentTime();
+
+        // Chat-Verlauf laden beim Start
+        loadChatHistory();
+        
+        // Cross-Tab Synchronisation einrichten
+        setupCrossTabSync();
+        
+        // Chat-Status beim Verlassen der Seite zurücksetzen
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('tl_consult_chat_status', 'closed');
+        });
+        
+        // Chat-Status beim Schließen des Fensters zurücksetzen
+        window.addEventListener('unload', () => {
+            localStorage.setItem('tl_consult_chat_status', 'closed');
+        });
+
+        // Auto-resize für Textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // Enter zum Senden (Shift+Enter für neue Zeile)
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Send Button Click
+        sendButton.addEventListener('click', sendMessage);
+
+        // Input-Validierung
+        function validateInput(input) {
+            const sanitized = input.trim();
+            if (sanitized.length > 2000) {
+                return { valid: false, error: 'Nachricht ist zu lang (max. 2000 Zeichen)' };
+            }
+            if (sanitized.length < 1) {
+                return { valid: false, error: 'Bitte geben Sie eine Nachricht ein' };
+            }
+            const dangerousPatterns = [/<script/i, /javascript:/i, /on\w+\s*=/i, /<iframe/i, /<object/i, /<embed/i];
+            for (const pattern of dangerousPatterns) {
+                if (pattern.test(sanitized)) {
+                    return { valid: false, error: 'Ungültige Zeichen in der Nachricht' };
+                }
+            }
+            return { valid: true, message: sanitized };
+        }
+
+        // Nachricht senden
+        async function sendMessage() {
+            const input = chatInput.value;
+            const validation = validateInput(input);
+            
+            if (!validation.valid) {
+                // Zeige Fehler an (optional)
+                console.warn('Input-Validierung fehlgeschlagen:', validation.error);
+                return;
+            }
+            
+            const message = validation.message;
+
+            // User-Nachricht hinzufügen
+            addMessage(message, 'user');
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Button deaktivieren während Request
+            sendButton.disabled = true;
+            typingIndicator.classList.add('active');
+
+            try {
+                // API Request
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Netzwerkfehler');
+                }
+
+                const data = await response.json();
+                
+                // Assistent-Antwort hinzufügen
+                addMessage(data.reply, 'assistant');
+            } catch (error) {
+                console.error('Fehler:', error);
+                addMessage('Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.', 'assistant');
+            } finally {
+                typingIndicator.classList.remove('active');
+                sendButton.disabled = false;
+                // Nur auf Desktop automatisch fokussieren (nicht auf mobilen Geräten)
+                if (window.innerWidth > 768) {
+                chatInput.focus();
+                }
+            }
+        }
+
+        // XSS-Schutz: HTML-Sanitization
+        function sanitizeHTML(html) {
+            const allowedTags = ['p', 'br', 'strong', 'em', 'u', 'h3', 'ul', 'ol', 'li', 'a'];
+            const allowedAttrs = { 'a': ['href', 'target', 'style'] };
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const walker = document.createTreeWalker(temp, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
+            const nodesToRemove = [];
+            let node;
+            while (node = walker.nextNode()) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tagName = node.tagName.toLowerCase();
+                    if (!allowedTags.includes(tagName)) {
+                        nodesToRemove.push(node);
+                    } else {
+                        const allowed = allowedAttrs[tagName] || [];
+                        Array.from(node.attributes).forEach(attr => {
+                            const name = attr.name.toLowerCase();
+                            if (!allowed.includes(name) || name.startsWith('on')) {
+                                node.removeAttribute(attr.name);
+                            }
+                        });
+                    }
+                }
+            }
+            nodesToRemove.forEach(node => {
+                const parent = node.parentNode;
+                while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                parent.removeChild(node);
+            });
+            return temp.innerHTML;
+        }
+
+        // Nachricht zum Chat hinzufügen
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            
+            // Sanitize HTML für AI-Antworten, User-Eingaben als Text
+            if (sender === 'assistant') {
+                bubbleDiv.innerHTML = sanitizeHTML(text);
+            } else {
+                // User-Eingaben immer als Text (sicher)
+                bubbleDiv.textContent = text;
+            }
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = getCurrentTime();
+
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeSpan);
+
+            // Vor dem Typing-Indikator einfügen
+            chatMessages.insertBefore(messageDiv, typingIndicator);
+
+            // Scrollen zum neuesten Nachricht
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Nachricht speichern
+            saveMessage(text, sender);
+        }
+
+        // Chat-Verlauf speichern (Session-basiert)
+        function saveMessage(text, sender) {
+            const messages = JSON.parse(localStorage.getItem('tl_consult_chat_history') || '[]');
+            messages.push({
+                text: text,
+                sender: sender,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Nur die letzten 50 Nachrichten speichern
+            if (messages.length > 50) {
+                messages.splice(0, messages.length - 50);
+            }
+            
+            localStorage.setItem('tl_consult_chat_history', JSON.stringify(messages));
+            
+            // Synchronisation mit anderen Tabs/Seiten
+            localStorage.setItem('tl_consult_chat_updated', Date.now().toString());
+        }
+
+        // Chat-Verlauf laden
+        function loadChatHistory() {
+            const messages = JSON.parse(localStorage.getItem('tl_consult_chat_history') || '[]');
+            
+            // Willkommensnachricht nur anzeigen wenn keine Verlaufsdaten vorhanden
+            if (messages.length === 0) {
+                return;
+            }
+
+            // Alle vorhandenen Nachrichten löschen (außer Willkommensnachricht)
+            const existingMessages = chatMessages.querySelectorAll('.message');
+            existingMessages.forEach(msg => {
+                if (!msg.querySelector('.message-bubble').textContent.includes('persönlicher Assistent')) {
+                    msg.remove();
+                }
+            });
+
+            // Verlaufsdaten laden
+            messages.forEach((msg, index) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.sender}`;
+
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                // Sanitize HTML für AI-Antworten, User-Eingaben als Text
+                if (msg.sender === 'assistant') {
+                    bubbleDiv.innerHTML = sanitizeHTML(msg.text);
+                } else {
+                    bubbleDiv.textContent = msg.text;
+                }
+
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'message-time';
+                const messageDate = new Date(msg.timestamp);
+                timeSpan.textContent = messageDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+                messageDiv.appendChild(bubbleDiv);
+                messageDiv.appendChild(timeSpan);
+
+                // Vor dem Typing-Indikator einfügen
+                chatMessages.insertBefore(messageDiv, typingIndicator);
+            });
+
+            // Zum Ende scrollen
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Chat-Verlauf löschen
+        function clearChatHistory() {
+            // LocalStorage löschen
+            localStorage.removeItem('tl_consult_chat_history');
+            localStorage.setItem('tl_consult_chat_updated', Date.now().toString());
+            
+            // Alle Nachrichten aus dem Chat entfernen (außer Willkommensnachricht)
+            const messages = chatMessages.querySelectorAll('.message');
+            messages.forEach(msg => {
+                if (!msg.querySelector('.message-bubble').textContent.includes('persönlicher Assistent')) {
+                    msg.remove();
+                }
+            });
+            
+            // Zum Anfang scrollen
+            chatMessages.scrollTop = 0;
+        }
+
+        // Aktuelle Zeit formatieren
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Cross-Tab Synchronisation einrichten
+        function setupCrossTabSync() {
+            // Event-Listener für Storage-Changes
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'tl_consult_chat_updated' && e.newValue) {
+                    // Chat wurde in einem anderen Tab aktualisiert
+                    loadChatHistory();
+                }
+                
+                // Chat-Status synchronisieren
+                if (e.key === 'tl_consult_chat_status') {
+                    const isOpen = e.newValue === 'open';
+                    if (isOpen && !chatWindow.classList.contains('open')) {
+                        chatWindow.classList.add('open');
+                        // Nur auf Desktop automatisch fokussieren (nicht auf mobilen Geräten)
+                        if (window.innerWidth > 768) {
+                        chatInput.focus();
+                        }
+                    } else if (!isOpen && chatWindow.classList.contains('open')) {
+                        chatWindow.classList.remove('open');
+                    }
+                }
+            });
+            
+            // Auch bei Focus auf das Fenster prüfen
+            window.addEventListener('focus', function() {
+                const lastUpdate = localStorage.getItem('tl_consult_chat_updated');
+                if (lastUpdate && lastUpdate !== window.tl_consult_lastChatUpdate) {
+                    loadChatHistory();
+                    window.tl_consult_lastChatUpdate = lastUpdate;
+                }
+                
+                // Chat-Status prüfen
+                const chatStatus = localStorage.getItem('tl_consult_chat_status');
+                const isOpen = chatStatus === 'open';
+                if (isOpen && !chatWindow.classList.contains('open')) {
+                    chatWindow.classList.add('open');
+                } else if (!isOpen && chatWindow.classList.contains('open')) {
+                    chatWindow.classList.remove('open');
+                }
+            });
+            
+            // Initialen Update-Timestamp setzen
+            window.tl_consult_lastChatUpdate = localStorage.getItem('tl_consult_chat_updated');
+            
+            // Initialen Chat-Status laden
+            const initialStatus = localStorage.getItem('tl_consult_chat_status');
+            if (initialStatus === 'open') {
+                chatWindow.classList.add('open');
+            }
+        }
+    </script>
+</body>
+</html>
