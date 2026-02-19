@@ -28,6 +28,9 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Calendly – für Terminbuchung (Vercel: optional CALENDLY_URL überschreiben; Standard: Gutshof 30min)
+const CALENDLY_URL = (process.env.CALENDLY_URL || 'https://calendly.com/stefanvanthoogt/30min').trim();
+
 // Quellen für die Gutshof-KI (Alter Behring Gutshof & Gutshof Gin)
 const GUTSHOF_URLS = [
     'https://hof.mellow.studio/',
@@ -128,6 +131,7 @@ FOODBUDDY (Foodtruck/Catering):
 VERLINKUNG – PFLICHT (immer so umsetzen):
 - Kontaktanfrage, Buchung, Hochzeit, Taufe, Konfirmation, Geburtstag, Firmenfeier, allgemeine Anfrage, „kontaktieren“, „anfragen“, „melden“ → IMMER auf das Kontaktformular verlinken: <a href="https://hof.mellow.studio/kontakt" target="_blank">Kontakt / Anfrage</a> (oder ähnlicher Link-Text). URL immer: https://hof.mellow.studio/kontakt
 - FOODbuddy, Foodtruck, Catering außerhalb, Miete Foodtruck, „Foodtruck anfragen“ → IMMER auf die FOODbuddy-Seite verlinken: <a href="https://hof.mellow.studio/foodbuudy" target="_blank">FOODbuddy anfragen</a> (oder ähnlicher Link-Text). URL immer: https://hof.mellow.studio/foodbuudy
+- Termin buchen, Vorgespräch, Besichtigung, „wann vorbeikommen“, „Termin vereinbaren“ → Wenn eine Calendly-URL konfiguriert ist, diesen Link in der Antwort anbieten (siehe TERMINBUCHUNG unten). Sonst auf Kontaktformular https://hof.mellow.studio/kontakt verweisen.
 
 GUTSHOF GIN:
 - London Dry Gin aus Marburg, regional gebrannt
@@ -150,6 +154,7 @@ ANTWORTREGELN:
 - Konkrete Infos aus den Quellen nützen; bei Kontakt- oder Buchungswünschen Adresse, Telefon, E-Mail und passende Links angeben
 - Bei Kontakt-/Buchungsanfragen (Hochzeit, Taufe, Firmenfeier, allgemeine Anfrage): immer auf https://hof.mellow.studio/kontakt verlinken (klickbar: <a href="https://hof.mellow.studio/kontakt" target="_blank">…</a>).
 - Bei FOODbuddy-/Foodtruck-/Catering-Anfragen (Miete, außerhalb des Hofs): immer auf https://hof.mellow.studio/foodbuudy verlinken (klickbar: <a href="https://hof.mellow.studio/foodbuudy" target="_blank">…</a>).
+- Bei Terminwunsch, Vorgespräch oder Besichtigung: Calendly-Link anbieten (wenn konfiguriert), sonst Kontaktformular.
 - Keine reinen Link-Listen; immer kurze Erklärung dazu
 - Bei Kontaktanfragen immer: Brunnenstr. 16, 35041 Marburg, Tel. 0151 / 12726010, info@behring-gutshof.de sowie Link zum Kontaktformular: https://hof.mellow.studio/kontakt
 
@@ -189,6 +194,10 @@ app.post('/api/chat', async (req, res) => {
                 enhancedSystemPrompt += '\nWICHTIG: Verwende diese aktuellen Unternehmensangebote in deinen Antworten!\n\n';
             }
         });
+
+        if (CALENDLY_URL) {
+            enhancedSystemPrompt += '\n\nTERMINBUCHUNG (Calendly): Bei Wunsch nach Termin, Vorgespräch oder Besichtigung immer diesen Link anbieten. In Antworten so einbinden: <a href="' + CALENDLY_URL + '" target="_blank">Hier können Sie einen freien Termin buchen</a>. URL: ' + CALENDLY_URL;
+        }
 
         // OpenAI API Aufruf
         const completion = await openai.chat.completions.create({
