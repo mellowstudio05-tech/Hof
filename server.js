@@ -30,6 +30,67 @@ const openai = new OpenAI({
 
 // Calendly – für Terminbuchung (Vercel: optional CALENDLY_URL überschreiben; Standard: Gutshof 30min)
 const CALENDLY_URL = (process.env.CALENDLY_URL || 'https://calendly.com/stefanvanthoogt/30min').trim();
+// Calendly API – für Abruf freier Termine (Personal Access Token unter https://calendly.com/integrations/api_webhooks)
+const CALENDLY_API_TOKEN = (process.env.CALENDLY_API_TOKEN || '').trim();
+const CALENDLY_API_BASE = 'https://api.calendly.com';
+
+// Cache für Calendly-Verfügbarkeit (5 Min)
+let calendlyAvailableTimesCache = null;
+let calendlyCacheTime = 0;
+const CALENDLY_CACHE_MS = 5 * 60 * 1000;
+
+/** Ruft freie Termine von Calendly für die nächsten 7 Tage ab. Gibt lesbare Zeilen für den Prompt zurück oder []. */
+async function getCalendlyAvailableTimes() {
+    if (!CALENDLY_API_TOKEN) return [];
+    const now = Date.now();
+    if (calendlyAvailableTimesCache && (now - calendlyCacheTime) < CALENDLY_CACHE_MS)
+        return calendlyAvailableTimesCache;
+
+    const auth = { headers: { Authorization: `Bearer ${CALENDLY_API_TOKEN}` } };
+
+    try {
+        // 1) Aktuellen User holen
+        const userRes = await axios.get(`${CALENDLY_API_BASE}/users/me`, auth);
+        const userUri = userRes.data?.resource?.uri;
+        if (!userUri) return [];
+
+        // 2) Event Types holen (z. B. 30min)
+        const etRes = await axios.get(`${CALENDLY_API_BASE}/event_types`, {
+            ...auth,
+            params: { user: userUri }
+        });
+        const eventTypes = etRes.data?.collection || [];
+        const eventType = eventTypes.find(et => (et.slug || '').includes('30min')) || eventTypes[0];
+        const eventTypeUri = eventType?.uri;
+        if (!eventTypeUri) return [];
+
+        // 3) Start/Ende: ab nächster Viertelstunde + 7 Tage (API verlangt „in der Zukunft“)
+        const start = new Date();
+        const ms15 = 15 * 60 * 1000;
+        start.setTime(Math.ceil(start.getTime() / ms15) * ms15);
+        const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const startTime = start.toISOString();
+        const endTime = end.toISOString();
+
+        const timesRes = await axios.get(`${CALENDLY_API_BASE}/event_type_available_times`, {
+            ...auth,
+            params: { event_type: eventTypeUri, start_time: startTime, end_time: endTime }
+        });
+        const slots = timesRes.data?.collection || [];
+        const lines = slots.slice(0, 30).map(s => {
+            const t = s.start_time ? new Date(s.start_time) : null;
+            if (!t) return null;
+            return t.toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }).filter(Boolean);
+
+        calendlyAvailableTimesCache = lines;
+        calendlyCacheTime = now;
+        return lines;
+    } catch (err) {
+        console.error('Calendly API Fehler:', err.response?.status, err.message);
+        return [];
+    }
+}
 
 // Quellen für die Gutshof-KI (Alter Behring Gutshof & Gutshof Gin)
 const GUTSHOF_URLS = [
@@ -197,6 +258,11 @@ app.post('/api/chat', async (req, res) => {
 
         if (CALENDLY_URL) {
             enhancedSystemPrompt += '\n\nTERMINBUCHUNG (Calendly): Bei Wunsch nach Termin, Vorgespräch oder Besichtigung immer diesen Link anbieten. In Antworten so einbinden: <a href="' + CALENDLY_URL + '" target="_blank">Hier können Sie einen freien Termin buchen</a>. URL: ' + CALENDLY_URL;
+        }
+
+        const availableSlots = await getCalendlyAvailableTimes();
+        if (availableSlots.length > 0) {
+            enhancedSystemPrompt += '\n\nVERFÜGBARE TERMINE (echte Daten von Calendly, nächste 7 Tage): ' + availableSlots.join('; ') + '. Wenn Nutzer nach freien Terminen fragen, nenne diese konkreten Zeiten in der Antwort und verweise zusätzlich auf den Buchungslink.';
         }
 
         // OpenAI API Aufruf
