@@ -77,13 +77,16 @@ async function getCalendlyAvailableTimes() {
             params: { event_type: eventTypeUri, start_time: startTime, end_time: endTime }
         });
         const slots = timesRes.data?.collection || [];
-        // Nur Donnerstage (getDay() === 4) – Vorgespräche finden nur donnerstags statt
+        // Nur Donnerstage in Europe/Berlin – Vorgespräche finden nur donnerstags statt
+        // Zeiten in Europe/Berlin formatieren, damit sie mit dem Calendly-Widget übereinstimmen
+        const tz = 'Europe/Berlin';
+        const thursdayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' });
         const lines = slots
             .map(s => {
                 const t = s.start_time ? new Date(s.start_time) : null;
                 if (!t) return null;
-                if (t.getDay() !== 4) return null; // 0=So, 1=Mo, …, 4=Do
-                return t.toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                if (thursdayFormatter.format(t) !== 'Thu') return null; // nur Donnerstag (in Berlin)
+                return t.toLocaleString('de-DE', { timeZone: tz, weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             })
             .filter(Boolean)
             .slice(0, 30);
