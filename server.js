@@ -264,6 +264,25 @@ app.post('/api/chat-advanced', async (req, res) => {
     }
 });
 
+// Root – damit GET / keine 404 liefert (z. B. Vercel-Logs)
+app.get('/', (req, res) => {
+    res.type('html').send(`
+        <!DOCTYPE html>
+        <html lang="de">
+        <head><meta charset="UTF-8"><title>Gutshof-KI Emil</title></head>
+        <body style="font-family:sans-serif;max-width:600px;margin:2rem auto;padding:1rem;">
+            <h1>Gutshof-KI Emil</h1>
+            <p>Backend für den Chat-Assistenten des Alten Behring Gutshofs.</p>
+            <p><a href="/health">Health-Check</a> · Chat-API: <code>POST /api/chat</code></p>
+        </body>
+        </html>
+    `);
+});
+
+// Favicons – 204, damit Browser/Logs keine 404 erzeugen
+app.get('/favicon.ico', (req, res) => { res.status(204).end(); });
+app.get('/favicon.png', (req, res) => { res.status(204).end(); });
+
 // Health Check Endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'Server läuft' });
@@ -273,7 +292,7 @@ app.get('/health', (req, res) => {
 app.post('/api/refresh-content', async (req, res) => {
     try {
         console.log('Manuelles Aktualisieren der Inhalte...');
-        scrapedContent = await scrapeTLConsultContent();
+        scrapedContent = await scrapeGutshofContent();
         lastScrapeTime = Date.now();
         
         res.json({ 
