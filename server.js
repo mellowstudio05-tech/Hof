@@ -15,6 +15,7 @@ app.use(cors({
         'https://www.hof.mellow.studio',
         'https://www.gutshof-gin.de',
         'https://gutshof-gin.de',
+        'https://hof-theta-beryl.vercel.app',
         // Nur für lokale Entwicklung - in Produktion entfernen!
         ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : [])
     ],
