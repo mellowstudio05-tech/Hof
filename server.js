@@ -13,6 +13,8 @@ app.use(cors({
     origin: [
         'https://hof.mellow.studio',
         'https://www.hof.mellow.studio',
+        'https://behring-gutshof.de',
+        'https://www.behring-gutshof.de',
         'https://www.gutshof-gin.de',
         'https://gutshof-gin.de',
         'https://hof-theta-beryl.vercel.app',
@@ -171,6 +173,7 @@ DEINE QUELLEN (nutze diese URLs in Antworten):
 - Gin-Shop: https://www.gutshof-gin.de/collections/gin
 
 ALTER BEHRING GUTSHOF – KERNINFOS:
+- Den Alten Behring Gutshof gibt es seit 2004.
 - Eventlocation im Herzen von Marburg-Marbach (Hessen), mit Charakter und Geschichte
 - Veranstaltungen: Hochzeiten, Tagungen, Weihnachtsfeiern, Firmenfeiern, private Feiern
 - Kapazität: Innen 15–120 Personen (je nach Raum); Außen bis ca. 300 Personen (Sommer)
